@@ -166,7 +166,6 @@ class BasicSong:
             self.source.upper(),
         ]
 
-
     @property
     def title(self):
         return self._title
@@ -194,24 +193,25 @@ class BasicSong:
 
         outfile = os.path.abspath(os.path.join(outdir, self.name))
         if os.path.exists(outfile):
-            click.echo("已存在,跳过下载!!!!")
-            #name, ext = self.name.rsplit(".", 1)
-            #names = [
-            #    x for x in os.listdir(outdir) if x.startswith(name) and x.endswith(ext)
-            #]
-            #names = [x.rsplit(".", 1)[0] for x in names]
-            #suffixes = [x.replace(name, "") for x in names]
-            ## filter suffixes that match ' (x)' pattern
-            #suffixes = [
-            #    x[2:-1] for x in suffixes if x.startswith(" (") and x.endswith(")")
-            #]
-            #indexes = [int(x) for x in suffixes if set(x) <= set("0123456789")]
-            #idx = 1
-            #if indexes:
-            #    idx += sorted(indexes)[-1]
-            #self._fullname = os.path.abspath(
-            #    os.path.join(outdir, "%s (%d)" % (name, idx))
-            #)
+            click.echo("已存在~~~")
+            name, ext = self.name.rsplit(".", 1)
+            names = [
+                x for x in os.listdir(outdir) if x.startswith(name) and x.endswith(ext)
+            ]
+            names = [x.rsplit(".", 1)[0] for x in names]
+            suffixes = [x.replace(name, "") for x in names]
+            # filter suffixes that match ' (x)' pattern
+            suffixes = [
+                x[2:-1] for x in suffixes if x.startswith(" (") and x.endswith(")")
+            ]
+            indexes = [int(x) for x in suffixes if set(x) <= set("0123456789")]
+            idx = 1
+            if indexes:
+                idx += sorted(indexes)[-1]
+            self._fullname = os.path.abspath(
+                # os.path.join(outdir, "%s (%d)" % (name, idx))
+                os.path.join(outdir, "%s" % name)
+            )
         else:
             self._fullname = outfile.rpartition(".")[0]
 
@@ -235,9 +235,13 @@ class BasicSong:
         :param stream: need process bar or not
         :return:
         """
+        if os.path.exists(outfile) and stream:
+            click.echo(" :: File exists.")
+            return True
+
         if not url:
             self.logger.error("URL is empty.")
-            return
+            return False
         try:
             r = requests.get(
                 url,
@@ -248,7 +252,7 @@ class BasicSong:
             if stream:
                 total_size = int(r.headers["content-length"])
                 with click.progressbar(
-                    length=total_size, label=_(" :: Downloading ...")
+                        length=total_size, label=_(" :: Downloading ...")
                 ) as bar:
                     with open(outfile, "wb") as f:
                         for chunk in r.iter_content(chunk_size=1024):
@@ -263,6 +267,7 @@ class BasicSong:
                     outfile=colorize(outfile, "highlight")
                 )
             )
+            return True
         except Exception as e:
             click.echo("")
             self.logger.error(_("Download failed: ") + "\n")
@@ -272,6 +277,7 @@ class BasicSong:
             )
             if config.get("verbose"):
                 self.logger.error(e)
+            return False
 
     def _save_lyrics_text(self):
         with open(self.lyrics_fullname, "w", encoding="utf-8") as f:
@@ -284,7 +290,10 @@ class BasicSong:
 
     def download_song(self):
         if self.song_url:
-            self._download_file(self.song_url, self.song_fullname, stream=True)
+            _success = self._download_file(self.song_url, self.song_fullname, stream=True)
+            return _success
+        else:
+            return False
 
     def download_lyrics(self):
         if self.lyrics_url:
@@ -302,10 +311,11 @@ class BasicSong:
         else:
             click.echo(" | ".join(self.row))
 
-        self.download_song()
-        if config.get("lyrics"):
+        success = self.download_song()
+        if config.get("lyrics") and success:
             self.download_lyrics()
-        if config.get("cover"):
+        if config.get("cover") and success:
             self.download_cover()
 
         click.echo("===============================================================\n")
+        return success

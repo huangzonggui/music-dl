@@ -36,12 +36,12 @@ def menu(songs_list):
 
     # 用户指定下载序号
     prompt = (
-        _("请输入{下载序号}，支持形如 {numbers} 的格式，输入 {N} 跳过下载").format(
-            下载序号=colorize(_("下载序号"), "yellow"),
-            numbers=colorize("0 3-5 8 all", "yellow"),
-            N=colorize("N", "yellow"),
-        )
-        + "\n >>"
+            _("请输入{下载序号}，支持形如 {numbers} 的格式，输入 {N} 跳过下载").format(
+                下载序号=colorize(_("下载序号"), "yellow"),
+                numbers=colorize("0 3-5 8 all", "yellow"),
+                N=colorize("N", "yellow"),
+            )
+            + "\n >>"
     )
 
     choices = click.prompt(prompt)
@@ -65,9 +65,16 @@ def menu(songs_list):
             else:
                 selected_list.append(int(start))
 
+    failed_downloads = []
+
     for idx in selected_list:
         if idx < len(songs_list):
-            songs_list[idx].download()
+            success = songs_list[idx].download()
+            if not success:
+                failed_downloads.append(songs_list[idx])
+
+    if failed_downloads:
+        process_failed_downloads(failed_downloads)
 
 
 def run():
@@ -87,6 +94,16 @@ def run():
         return
 
 
+def process_failed_downloads(failed_downloads):
+    ms = MusicSource()
+    for song in failed_downloads:
+        retry = click.confirm(f"下载失败：{song.singer} - {song.title}，是否重新搜索并下载？", default=True)
+        if retry:
+            config.set("keyword", f"{song.title} {song.singer}") # 顺序影响搜索结果
+            songs_list = ms.search(config.get("keyword"), config.get("source").split())
+            menu(songs_list)
+
+
 @click.command()
 @click.version_option()
 @click.option("-k", "--keyword", help=_("搜索关键字，歌名和歌手同时输入可以提高匹配（如 空帆船 朴树）"))
@@ -99,24 +116,24 @@ def run():
     help=_("支持的数据源: ") + "baidu",
 )
 @click.option("-n", "--number", default=200, help=_("搜索数量限制"))
-@click.option("-o", "--outdir", default="/volume2/share/musics/", help=_("指定输出目录"))
+@click.option("-o", "--outdir", default="./musics/", help=_("指定输出目录"))
 @click.option("-x", "--proxy", default="", help=_("指定代理（如http://127.0.0.1:1087）"))
 @click.option("-v", "--verbose", default=False, is_flag=True, help=_("详细模式"))
 @click.option("--lyrics", default=True, is_flag=True, help=_("同时下载歌词"))
 @click.option("--cover", default=True, is_flag=True, help=_("同时下载封面"))
 @click.option("--nomerge", default=True, is_flag=True, help=_("不对搜索结果列表排序和去重"))
 def main(
-    keyword,
-    url,
-    playlist,
-    source,
-    number,
-    outdir,
-    proxy,
-    verbose,
-    lyrics,
-    cover,
-    nomerge,
+        keyword,
+        url,
+        playlist,
+        source,
+        number,
+        outdir,
+        proxy,
+        verbose,
+        lyrics,
+        cover,
+        nomerge,
 ):
     """
         Search and download music from netease, qq, kugou, baidu and xiami.

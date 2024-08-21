@@ -19,6 +19,7 @@ class MusicApi:
     if config.get("proxies"):
         session.proxies.update(config.get("proxies"))
     session.headers.update({"referer": "http://www.google.com/"})
+    session.cookies.update(config.get('netease_cookies'))
 
     @classmethod
     def request(cls, url, method="POST", data=None):
