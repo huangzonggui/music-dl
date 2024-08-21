@@ -25,6 +25,8 @@ def menu(songs_list):
     tb.field_names = ["序号", "歌名", "歌手", "大小", "时长", "专辑", "来源"]
     # 遍历输出搜索列表
     for index, song in enumerate(songs_list):
+        if "dj" in song.name.lower():
+            continue
         song.idx = index
         tb.add_row(song.row)
         # click.echo(song.info)
@@ -36,7 +38,7 @@ def menu(songs_list):
     prompt = (
         _("请输入{下载序号}，支持形如 {numbers} 的格式，输入 {N} 跳过下载").format(
             下载序号=colorize(_("下载序号"), "yellow"),
-            numbers=colorize("0 3-5 8", "yellow"),
+            numbers=colorize("0 3-5 8 all", "yellow"),
             N=colorize("N", "yellow"),
         )
         + "\n >>"
@@ -47,16 +49,21 @@ def menu(songs_list):
     while not re.match(r"^((\d+\-\d+)|(\d+)|\s+)+$", choices):
         if choices.lower() == "n":
             return
+        if choices.lower() == "all":
+            break
         choices = click.prompt("%s%s" % (colorize(_("输入有误!"), "red"), prompt))
 
     click.echo("")
     selected_list = []
-    for choice in choices.split():
-        start, to, end = choice.partition("-")
-        if end:
-            selected_list += range(int(start), int(end) + 1)
-        else:
-            selected_list.append(int(start))
+    if choices == "all":
+        selected_list = list(range(len(songs_list)))
+    else:
+        for choice in choices.split():
+            start, to, end = choice.partition("-")
+            if end:
+                selected_list += range(int(start), int(end) + 1)
+            else:
+                selected_list.append(int(start))
 
     for idx in selected_list:
         if idx < len(songs_list):
@@ -91,13 +98,13 @@ def run():
     # default="qq netease kugou baidu",
     help=_("支持的数据源: ") + "baidu",
 )
-@click.option("-n", "--number", default=5, help=_("搜索数量限制"))
-@click.option("-o", "--outdir", default=".", help=_("指定输出目录"))
+@click.option("-n", "--number", default=200, help=_("搜索数量限制"))
+@click.option("-o", "--outdir", default="/volume2/share/musics/", help=_("指定输出目录"))
 @click.option("-x", "--proxy", default="", help=_("指定代理（如http://127.0.0.1:1087）"))
 @click.option("-v", "--verbose", default=False, is_flag=True, help=_("详细模式"))
-@click.option("--lyrics", default=False, is_flag=True, help=_("同时下载歌词"))
-@click.option("--cover", default=False, is_flag=True, help=_("同时下载封面"))
-@click.option("--nomerge", default=False, is_flag=True, help=_("不对搜索结果列表排序和去重"))
+@click.option("--lyrics", default=True, is_flag=True, help=_("同时下载歌词"))
+@click.option("--cover", default=True, is_flag=True, help=_("同时下载封面"))
+@click.option("--nomerge", default=True, is_flag=True, help=_("不对搜索结果列表排序和去重"))
 def main(
     keyword,
     url,
@@ -129,7 +136,7 @@ def main(
     config.set("playlist", playlist)
     if source:
         config.set("source", source)
-    config.set("number", min(number, 50))
+    config.set("number", max(number, 50))
     config.set("outdir", outdir)
     config.set("verbose", verbose)
     config.set("lyrics", lyrics)
