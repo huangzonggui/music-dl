@@ -139,7 +139,7 @@ def netease_search(keyword) -> list:
             if item.get("privilege", {}).get("fl", {}) >= 320000 and item.get("h", ""):
                 size = item.get("h", {}).get("size", 0)
             elif item.get("privilege", {}).get("fl", {}) >= 192000 and item.get(
-                "m", ""
+                    "m", ""
             ):
                 size = item.get("m", {}).get("size", 0)
             else:
@@ -154,6 +154,10 @@ def netease_search(keyword) -> list:
             song.duration = int(item.get("dt", 0) / 1000)
             song.size = round(size / 1048576, 2)
             song.cover_url = item.get("al", {}).get("picUrl", "")
+            if item.get("fee", 1) == 0:
+                # 0 表示没有版权，跳过该歌曲
+                song.source += " (没版权)"
+
             songs_list.append(song)
     except Exception as e:
         raise DataError(e)
@@ -199,6 +203,9 @@ def netease_playlist(url) -> list:
             song.duration = int(item.get("dt", 0) / 1000)
             song.size = round(size / 1048576, 2)
             song.cover_url = item.get("al", {}).get("picUrl", "")
+            if item.get("fee", 1) == 0:
+                # 0 表示没有版权，跳过该歌曲
+                song.source += " 没版权"
             songs_list.append(song)
     return songs_list
 

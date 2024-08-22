@@ -25,8 +25,6 @@ def menu(songs_list):
     tb.field_names = ["序号", "歌名", "歌手", "大小", "时长", "专辑", "来源"]
     # 遍历输出搜索列表
     for index, song in enumerate(songs_list):
-        if "dj" in song.name.lower() or "现场" in song.name:  # 过滤
-            continue
         song.idx = index
         tb.add_row(song.row)
         # click.echo(song.info)
@@ -93,13 +91,12 @@ def run():
     else:
         return
 
-
 def process_failed_downloads(failed_downloads):
     ms = MusicSource()
     for song in failed_downloads:
         retry = click.confirm(f"下载失败：{song.singer} - {song.title}，是否重新搜索并下载？", default=True)
         if retry:
-            config.set("keyword", f"{song.title} {song.singer}") # 顺序影响搜索结果
+            config.set("keyword", f"{song.title} {song.singer}")  # 顺序影响搜索结果
             songs_list = ms.search(config.get("keyword"), config.get("source").split())
             menu(songs_list)
 
@@ -153,7 +150,7 @@ def main(
     config.set("playlist", playlist)
     if source:
         config.set("source", source)
-    config.set("number", max(number, max(number, 5))) # 至少 5
+    config.set("number", max(number, max(number, 5)))  # 至少 5
     config.set("outdir", outdir)
     config.set("verbose", verbose)
     config.set("lyrics", lyrics)

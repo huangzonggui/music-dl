@@ -7,6 +7,9 @@
 """
 
 import copy
+
+import click
+
 from .. import config
 from ..api import MusicApi
 from ..song import BasicSong
@@ -72,6 +75,7 @@ def kugou_search(keyword) -> list:
         .get("lists", [])
     )
 
+    click.echo("")
     for item in res_data:
         song = KugouSong()
         song.source = "kugou"
@@ -82,6 +86,15 @@ def kugou_search(keyword) -> list:
         song.album = item.get("AlbumName", "")
         song.size = round(item.get("FileSize", 0) / 1048576, 2)
         song.hash = item.get("FileHash", "")
+
+        # 检查歌曲是否需要付费，会过滤掉比较多的音乐
+        # 待验证：pay_type 为3表示可能需要付费，privilege 为8或更高意味着歌曲有较高的权限要求，通常需要付费才能下载
+        pay_type = item.get("PayType", 0)
+        privilege = item.get("Privilege", 0)
+        if pay_type == 3 and privilege >= 8:
+            # 跳过需要付费的歌曲
+            song.source += " (可能付费)"
+
         # 如果有更高品质的音乐选择高品质（尽管好像没什么卵用）
         keys_list = ["SQFileHash", "HQFileHash"]
         for key in keys_list:

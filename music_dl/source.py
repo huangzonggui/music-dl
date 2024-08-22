@@ -74,18 +74,22 @@ class MusicSource:
 
         # 对搜索结果排序和去重
         if not config.get("nomerge"):
-            ret_songs_list.sort(
-                key=lambda song: (song.singer, song.title, song.size), reverse=True
-            )
+
+            # ret_songs_list.sort(
+            #     key=lambda song: (song.singer, song.title, song.size), reverse=True
+            # )
             tmp_list = []
             for i in range(len(ret_songs_list)):
                 # 如果名称、歌手都一致的话就去重，保留最大的文件
                 if (
-                    i > 0
-                    and ret_songs_list[i].size <= ret_songs_list[i - 1].size
-                    and ret_songs_list[i].title == ret_songs_list[i - 1].title
-                    and ret_songs_list[i].singer == ret_songs_list[i - 1].singer
+                        i > 0
+                        and ret_songs_list[i].size <= ret_songs_list[i - 1].size
+                        and ret_songs_list[i].title == ret_songs_list[i - 1].title
+                        and ret_songs_list[i].singer == ret_songs_list[i - 1].singer
                 ):
+                    continue
+                if ("dj" in ret_songs_list[i].title.lower() or "现场" in ret_songs_list[i].title
+                        or "dj" in ret_songs_list[i].album.lower() or "现场" in ret_songs_list[i].album):  # 过滤
                     continue
                 tmp_list.append(ret_songs_list[i])
             ret_songs_list = tmp_list
