@@ -46,7 +46,7 @@ class KugouSong(BasicSong):
             "http://m.kugou.com/app/i/getSongInfo.php", method="GET", data=params
         )
         if not res_data.get("url", ""):
-            self.logger.error(self.name + " @KUGOU is not available.")
+            self.logger.error(self.name + " @KUGOU is not available. errorMsg: " + res_data.get("error", ""))
             return
         self.song_url = res_data.get("url", "")
         self.rate = res_data.get("bitRate", 128)

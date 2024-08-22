@@ -25,7 +25,7 @@ def menu(songs_list):
     tb.field_names = ["序号", "歌名", "歌手", "大小", "时长", "专辑", "来源"]
     # 遍历输出搜索列表
     for index, song in enumerate(songs_list):
-        if "dj" in song.name.lower():
+        if "dj" in song.name.lower() or "现场" in song.name:  # 过滤
             continue
         song.idx = index
         tb.add_row(song.row)
@@ -115,13 +115,13 @@ def process_failed_downloads(failed_downloads):
     # default="qq netease kugou baidu",
     help=_("支持的数据源: ") + "baidu",
 )
-@click.option("-n", "--number", default=200, help=_("搜索数量限制"))
-@click.option("-o", "--outdir", default="./musics/", help=_("指定输出目录"))
+@click.option("-n", "--number", default=10, help=_("搜索数量限制"))
+@click.option("-o", "--outdir", default="/volume2/share/musics/", help=_("指定输出目录"))
 @click.option("-x", "--proxy", default="", help=_("指定代理（如http://127.0.0.1:1087）"))
 @click.option("-v", "--verbose", default=False, is_flag=True, help=_("详细模式"))
 @click.option("--lyrics", default=True, is_flag=True, help=_("同时下载歌词"))
 @click.option("--cover", default=True, is_flag=True, help=_("同时下载封面"))
-@click.option("--nomerge", default=True, is_flag=True, help=_("不对搜索结果列表排序和去重"))
+@click.option("--nomerge", default=False, is_flag=True, help=_("不对搜索结果列表排序和去重"))
 def main(
         keyword,
         url,
@@ -153,7 +153,7 @@ def main(
     config.set("playlist", playlist)
     if source:
         config.set("source", source)
-    config.set("number", max(number, 50))
+    config.set("number", max(number, max(number, 5))) # 至少 5
     config.set("outdir", outdir)
     config.set("verbose", verbose)
     config.set("lyrics", lyrics)
